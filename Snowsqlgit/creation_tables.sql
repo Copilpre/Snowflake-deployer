@@ -1,3 +1,5 @@
+CREATE OR REPLACE FILE FORMAT MY_CSV_FORMAT PARSE_HEADER=TRUE FIELD_OPTIONALLY_ENCLOSED_BY='\"';
+
 CREATE OR REPLACE TABLE MY_TMP (
     id INTEGER AUTOINCREMENT,
     text TEXT
@@ -71,7 +73,7 @@ CREATE OR REPLACE PROCEDURE creation_tables()
     suppression text;
     
     BEGIN
-        FOR i IN 0 TO maximum_count DO
+        FOR i IN 1 TO maximum_count DO
             counter := counter + 1;
             -----Select le nom du premier fichier présent dans la table my_tmp
             file_name_var := (SELECT text FROM MY_TMP ORDER BY ID LIMIT 1);

@@ -26,6 +26,7 @@ AS $$
     ----------------------
     table_name := REPLACE(:table_name, '/', '_');
     table_name := REPLACE(:table_name, '.', '_');
+    table_name := REPLACE(:table_name, '-', '_');
     system$log_info('create table ""' || :table_name || '"" from file ""'|| :file_name || '"');
     location := concat('@MY_AWS/', :file_name);
     create or replace table identifier(:table_name) using template (

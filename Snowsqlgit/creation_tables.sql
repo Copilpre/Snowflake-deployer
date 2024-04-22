@@ -6,9 +6,11 @@ CREATE OR REPLACE TABLE MY_TMP (
 ) AS 
 SELECT ROW_NUMBER() OVER(ORDER BY METADATA$FILENAME) AS id, METADATA$FILENAME
 FROM (SELECT DISTINCT METADATA$FILENAME FROM @MY_AWS);
+select * from MY_TMP;
 
 
-CREATE OR REPLACE PROCEDURE DB_SPRINT1.SCH_SPRINT1.LOAD_BRONZE_TABLE_TEST("TABLE_NAME" VARCHAR(16777216), "FILE_NAME" VARCHAR(16777216))
+
+CREATE OR REPLACE PROCEDURE DB_SPRINT1.SCH_SPRINT1.LOAD_BRONZE_TABLE("TABLE_NAME" VARCHAR(16777216), "FILE_NAME" VARCHAR(16777216))
 RETURNS VARCHAR(16777216)
 LANGUAGE SQL
 --EXECUTE AS OWNER
@@ -26,7 +28,6 @@ AS $$
     ----------------------
     table_name := REPLACE(:table_name, '/', '_');
     table_name := REPLACE(:table_name, '.', '_');
-    table_name := REPLACE(:table_name, '-', '_');
     system$log_info('create table ""' || :table_name || '"" from file ""'|| :file_name || '"');
     location := concat('@MY_AWS/', :file_name);
     create or replace table identifier(:table_name) using template (
@@ -82,7 +83,7 @@ CREATE OR REPLACE PROCEDURE creation_tables()
             suppression:= 'DELETE FROM MY_TMP WHERE MY_TMP.ID = ' || :counter;
             execute immediate suppression;
             ----création de la table
-            let command varchar := 'call LOAD_BRONZE_TABLE_TEST(''' || :file_name_var || ''', ''' || :file_name_var || ''')';
+            let command varchar := 'call LOAD_BRONZE_TABLE(''' || :file_name_var || ''', ''' || :file_name_var || ''')';
             execute immediate command;
             
             END FOR;
@@ -94,3 +95,5 @@ $$
 call creation_tables();
 
 DROP TABLE MY_TMP;
+
+SHOW TERSE TABLES IN DB_SPRINT1.SCH_SPRINT1;

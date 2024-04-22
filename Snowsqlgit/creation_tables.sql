@@ -1,15 +1,5 @@
 CREATE OR REPLACE FILE FORMAT MY_CSV_FORMAT PARSE_HEADER=TRUE FIELD_OPTIONALLY_ENCLOSED_BY='\"';
 
-CREATE OR REPLACE TABLE MY_TMP (
-    id INTEGER AUTOINCREMENT,
-    text TEXT
-) AS 
-SELECT ROW_NUMBER() OVER(ORDER BY METADATA$FILENAME) AS id, METADATA$FILENAME
-FROM (SELECT DISTINCT METADATA$FILENAME FROM @MY_AWS);
-select * from MY_TMP;
-
-
-
 CREATE OR REPLACE PROCEDURE DB_SPRINT1.SCH_SPRINT1.LOAD_BRONZE_TABLE("TABLE_NAME" VARCHAR(16777216), "FILE_NAME" VARCHAR(16777216))
 RETURNS VARCHAR(16777216)
 LANGUAGE SQL
@@ -63,38 +53,29 @@ AS $$
   $$;
 
 
-CREATE OR REPLACE PROCEDURE creation_tables()
+CREATE OR REPLACE PROCEDURE creation_tables_cursor()
   RETURNS text
   LANGUAGE SQL
   AS
   $$
     -- Snowflake Scripting code
     DECLARE
-    counter INTEGER DEFAULT 0;
-    maximum_count INTEGER default (SELECT COUNT(text) from MY_TMP);
-    file_name_var text ;
-    suppression text;
+    
+    files_list RESULTSET DEFAULT (SELECT DISTINCT METADATA$FILENAME as filename from @MY_AWS);
+    c1 CURSOR FOR files_list;
     
     BEGIN
-        FOR i IN 1 TO maximum_count DO
-            counter := counter + 1;
-            -----Select le nom du premier fichier présent dans la table my_tmp
-            file_name_var := (SELECT text FROM MY_TMP ORDER BY ID LIMIT 1);
-            -----Suppression de la ligne correspondant au premier fichier de la table
-            suppression:= 'DELETE FROM MY_TMP WHERE MY_TMP.ID = ' || :counter;
-            execute immediate suppression;
-            ----création de la table
-            let command varchar := 'call LOAD_BRONZE_TABLE(''' || :file_name_var || ''', ''' || :file_name_var || ''')';
+        FOR record IN c1 DO
+            
+            let command varchar := 'call LOAD_BRONZE_TABLE(''' || record.filename || ''', ''' || record.filename || ''')';
             execute immediate command;
             
             END FOR;
-            RETURN :counter;
+            return 'done';
     END;
 $$
 ;
 
-call creation_tables();
-
-DROP TABLE MY_TMP;
+call creation_tables_cursor();
 
 SHOW TERSE TABLES IN DB_SPRINT1.SCH_SPRINT1;
